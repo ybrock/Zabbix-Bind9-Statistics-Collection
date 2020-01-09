@@ -125,32 +125,31 @@ else:
             if child.attrib['type'] == 'qtype':
                 for stat in child.iterfind('./counter'):
                     j['incounter'][stat.attrib['name']] = stat.text
-        # they are only for block _default
-        for child in root.iterfind('./views/view/counters'):
-            # V2 ./bind/statistics/views/view/rdtype
-            if child.attrib['type'] == 'resqtype':
-                for stat in child.iterfind('./counter'):
-                    j['outcounter'][stat.attrib['name']] = stat.text
-            # V2 ./bind/statistics/views/view => _default name only
-            if child.attrib['type'] == 'resstats':
-                for stat in child.iterfind('./counter'):
-                    j['resolvercounter'][stat.attrib['name']] = stat.text
-            # V2: no (only in memory detail stats)
-            if child.attrib['type'] == 'cachestats':
-                for stat in child.iterfind('./counter'):
-                    j['cache'][stat.attrib['name']] = stat.text
-        # V2 has @name = localhost_resolver, interal, external
-        for child in root.iterfind('./views/view/cache'):
-            if (child.attrib['name'] == '_default'):
-                for stat in child.iterfind('./rrset'):
-                    j['cache'][stat.findtext('./name')] = stat.findtext('./counter')
-                    # for sets stating with !, we replace that with an _ (! is not allowed in zabbix)
-                    if re.match('^!', stat.findtext('./name')):
-                        j['cache'][stat.findtext('./name').replace('!', '_')] = stat.findtext('./counter')
-        # for all the Zone stats only
+
+        # we want only for view "_default" and avoid view "_bind"
         for child in root.iterfind('./views/view'):
-            # only for default
-            if (child.attrib['name'] == '_default'):
+            if child.attrib['name'] == '_default':
+                for counter in child.iterfind('./counters'):
+                    # V2 ./bind/statistics/views/view/rdtype
+                    if counter.attrib['type'] == 'resqtype':
+                        for stat in counter.iterfind('./counter'):
+                            j['outcounter'][stat.attrib['name']] = stat.text
+                    # V2 ./bind/statistics/views/view => _default name only
+                    if counter.attrib['type'] == 'resstats':
+                        for stat in counter.iterfind('./counter'):
+                            j['resolvercounter'][stat.attrib['name']] = stat.text
+                    # V2: no (only in memory detail stats)
+                    if counter.attrib['type'] == 'cachestats':
+                        for stat in counter.iterfind('./counter'):
+                            j['cache'][stat.attrib['name']] = stat.text
+                # V2 has @name = localhost_resolver, interal, external
+                for cache in child.iterfind('./cache'):
+                    if (cache.attrib['name'] == '_default'):
+                        for stat in cache.iterfind('./rrset'):
+                            j['cache'][stat.findtext('./name')] = stat.findtext('./counter')
+                            # for sets stating with !, we replace that with an _ (! is not allowed in zabbix)
+                            if re.match('^!', stat.findtext('./name')):
+                                j['cache'][stat.findtext('./name').replace('!', '_')] = stat.findtext('./counter')
                 # V2 ./bind/statistics/views/view -> ./zones/zone => _default name only
                 for zone in child.iterfind('./zones/zone'):
                     counters = {}
@@ -159,6 +158,7 @@ else:
                             for counter in stat.iterfind('./counter'):
                                 counters[counter.attrib['name']] = counter.text
                     j['zones'][zone.attrib['name']] = counters
+
         # V2 ./bind/statistics/memory/summary/*
         for child in root.iterfind('./memory/summary/*'):
             j['memory'][child.tag] = child.text
