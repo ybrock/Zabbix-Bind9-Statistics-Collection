@@ -168,7 +168,7 @@ else:
         json.dump(j, f)
 
 if args.action == 'discoverzones':
-    d = {'data': [{'{#ZONE}': zone} for zone in j['zones'].keys()]}
+    d = {'data': [{'{#ZONE}': zone} for zone in  list(filter(lambda x: "ARPA" not in x, j['zones'].keys()))]}
     print(json.dumps(d))
     sys.exit(0)
 
@@ -181,7 +181,7 @@ elif args.action == 'zonecounter':
         print(j['zones'][args.z][args.c])
         sys.exit(0)
     else:
-        print("ZBX_NOTSUPPORTED")
+        print("0") # set errors to zero (happens to ARPA zones)
         sys.exit(1)
 
 else:
